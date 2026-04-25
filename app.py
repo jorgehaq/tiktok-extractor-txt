@@ -34,10 +34,13 @@ def load_whisper():
 def get_full_metadata(url, tmp_dir):
     """Extrae todo como si lo vieras en el teléfono."""
     cmd = [
-        "yt-dlp", 
+        "python", "-m", "yt_dlp",
         "--cookies", "cookies.txt",
+        # EL ESPEJO: La huella digital exacta de Windows/Chrome
+        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "--no-playlist", "--dump-json", "--quiet",
-        "-o", os.path.join(tmp_dir, "%(id)s.%(ext)s"), url
+        "-o", os.path.join(tmp_dir, "%(id)s.%(ext)s"), 
+        url
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.stdout.strip():
@@ -47,14 +50,18 @@ def get_full_metadata(url, tmp_dir):
 def get_audio_and_transcribe(url, tmp_dir, model):
     """Descarga el audio y lo pasa por Whisper."""
     cmd = [
-        "yt-dlp", 
+        "python", "-m", "yt_dlp",
         "--cookies", "cookies.txt",
-        "--extract-audio", "--audio-format", "mp3", "--quiet",
-        "-o", os.path.join(tmp_dir, "audio.%(ext)s"), url
+        # EL ESPEJO: La huella digital exacta de Windows/Chrome
+        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "-x", "--audio-format", "mp3",
+        "--audio-quality", "0",
+        "-o", os.path.join(tmp_dir, "temp_audio.%(ext)s"),
+        url
     ]
     subprocess.run(cmd)
     
-    audio_path = os.path.join(tmp_dir, "audio.mp3")
+    audio_path = os.path.join(tmp_dir, "temp_audio.mp3")
     if os.path.exists(audio_path):
         result = model.transcribe(audio_path, fp16=False)
         return result.get("text", "").strip()
