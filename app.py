@@ -140,3 +140,23 @@ if st.button("🚀 Extraer y Clasificar"):
                     st.subheader("📝 Contenido")
                     st.text_area("Descripción Original", descripcion, height=150)
                     st.text_area("Transcripción del Audio", transcripcion, height=150)
+                
+                # 6. Módulo de Exportación (El "Contenedor de Carga")
+                payload_markdown = f"""## 🔗 Origen y Metadatos
+- **URL:** {url_input}
+- **Clasificación:** {clasificacion["categoria_principal"]} | {", ".join(clasificacion["palabras_clave"])}
+
+---
+
+## 📝 Descripción Original
+{descripcion}
+
+---
+
+## 🎙️ Transcripción del Audio (Isótopo Puro)
+{transcripcion}
+"""
+                st.divider()
+                st.subheader("📦 Empaquetado para Exportación (Markdown)")
+                st.caption("Haz clic en el ícono de copiar en la esquina superior derecha del cuadro inferior. Todo quedará listo para pegar en tu archivo .md")
+                st.code(payload_markdown, language="markdown")
