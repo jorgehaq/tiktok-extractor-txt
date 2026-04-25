@@ -34,7 +34,9 @@ def load_whisper():
 def get_full_metadata(url, tmp_dir):
     """Extrae todo como si lo vieras en el teléfono."""
     cmd = [
-        "yt-dlp", "--no-playlist", "--dump-json", "--quiet",
+        "yt-dlp", 
+        "--cookies", "cookies.txt",
+        "--no-playlist", "--dump-json", "--quiet",
         "-o", os.path.join(tmp_dir, "%(id)s.%(ext)s"), url
     ]
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -45,7 +47,9 @@ def get_full_metadata(url, tmp_dir):
 def get_audio_and_transcribe(url, tmp_dir, model):
     """Descarga el audio y lo pasa por Whisper."""
     cmd = [
-        "yt-dlp", "--extract-audio", "--audio-format", "mp3", "--quiet",
+        "yt-dlp", 
+        "--cookies", "cookies.txt",
+        "--extract-audio", "--audio-format", "mp3", "--quiet",
         "-o", os.path.join(tmp_dir, "audio.%(ext)s"), url
     ]
     subprocess.run(cmd)
