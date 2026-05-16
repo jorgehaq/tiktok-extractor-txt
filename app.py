@@ -5,6 +5,7 @@ import subprocess
 import tempfile
 import os
 import whisper
+import requests # Requiere: pip install requests
 
 # -- 1. CONFIGURACIÓN DEL ESCENARIO (DB y Modelos) --
 
@@ -70,10 +71,6 @@ def get_audio_and_transcribe(url, tmp_dir, model):
 # -- 3. EL CEREBRO (Clasificación Controlada) --
 
 def clasificar_con_ia(titulo, descripcion, transcripcion):
-    """
-    Aquí conectas tu API (OpenAI, Gemini, etc).
-    El truco está en el PROMPT estricto para evitar crecimiento arbóreo infinito.
-    """
     prompt = f"""
     Actúa como un bibliotecario experto. Analiza este video de TikTok:
     Título: {titulo}
@@ -88,14 +85,53 @@ def clasificar_con_ia(titulo, descripcion, transcripcion):
     }}
     """
     
-    # SIMULACIÓN (Reemplaza esto con tu llamada real a la API de IA)
-    # respuesta_ia = llm.generate(prompt)
-    respuesta_simulada = {
-        "categoria_principal": "Tecnología",
-        "tipo_contenido": "Tip/Truco",
-        "palabras_clave": ["python", "scripts", "automatización"]
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return {
+            "error": "Falta OPENROUTER_API_KEY en el entorno. MODO SEGURO ACTIVADO.",
+            "categoria_principal": "Otro",
+            "tipo_contenido": "Noticia",
+            "palabras_clave": ["error_falta_api_key"]
+        }
+
+    headers = {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "HTTP-Referer": "https://tiktok-brain.jorgealvarez.com", # Ajustar a dominio real/repo
+        "X-Title": "TikTok Brain Extractor"
     }
-    return respuesta_simulada
+
+    payload = {
+        "model": "google/gemini-2.0-flash-exp:free",
+        "messages": [{"role": "user", "content": prompt}],
+        "max_tokens": 1024,
+        "temperature": 0.0 # Determinismo absoluto
+    }
+
+    try:
+        response = requests.post("https://openrouter.ai/api/v1/chat/completions", headers=headers, json=payload)
+        response.raise_for_status()
+        data = response.json()
+        
+        ai_response_text = data.get("choices", [{}])[0].get("message", {}).get("content", "{}")
+        
+        # Extracción robusta (Port de la lógica index.ts)
+        first_brace = ai_response_text.find('{')
+        last_brace = ai_response_text.rfind('}')
+        
+        if first_brace == -1 or last_brace == -1 or last_brace <= first_brace:
+            raise ValueError("No se encontró un bloque JSON válido.")
+            
+        cleaned_text = ai_response_text[first_brace:last_brace + 1]
+        return json.loads(cleaned_text)
+
+    except Exception as e:
+        # Fallback Graceful Degradation
+        return {
+            "categoria_principal": "Otro",
+            "tipo_contenido": "Noticia",
+            "palabras_clave": ["error_clasificacion", "requiere_revision_manual"]
+        }
 
 # -- 4. LA INTERFAZ (Streamlit) --
 
