@@ -1,0 +1,12 @@
+[project]
+name = "tiktok-extractor-txt"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "openai-whisper>=20250625",
+    "requests>=2.34.2",
+    "streamlit>=1.58.0",
+    "yt-dlp>=2026.6.9",
+]
