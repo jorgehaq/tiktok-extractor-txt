@@ -8,6 +8,11 @@ import whisper
 import requests
 import sys
 
+# -- 0. AÑADIR FFMPEG LOCAL AL PATH --
+local_bin = os.path.abspath(os.path.join(os.path.dirname(__file__), "bin"))
+if local_bin not in os.environ["PATH"]:
+    os.environ["PATH"] = local_bin + os.pathsep + os.environ["PATH"]
+
 # -- 0. CARGAR VARIABLES DE ENTORNO DESDE .ENV --
 def load_env():
     if os.path.exists(".env"):
@@ -49,7 +54,7 @@ def get_full_metadata(url, tmp_dir):
     use_cookies = os.path.exists("cookies.txt")
     cmd_base = [
         sys.executable, "-m", "yt_dlp",
-        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "--extractor-args", "tiktok:api_hostname=api22-normal-c-useast2a.tiktokv.com",
         "--no-playlist", "--dump-json", "--quiet",
         "-o", os.path.join(tmp_dir, "%(id)s.%(ext)s"), 
     ]
@@ -70,13 +75,46 @@ def get_full_metadata(url, tmp_dir):
             return json.loads(result.stdout.strip().splitlines()[-1])
         except Exception:
             pass
+            
+    # Fallback: Usar TikWM API si yt-dlp falla por bloqueo de IP
+    try:
+        r = requests.get(f"https://www.tikwm.com/api/?url={url}", timeout=10)
+        if r.status_code == 200:
+            res = r.json()
+            if res.get("code") == 0 and "data" in res:
+                data = res["data"]
+                title_desc = data.get("title", "")
+                tags = [t.replace("#", "") for t in title_desc.split() if t.startswith("#")]
+                return {
+                    "title": title_desc,
+                    "description": " ".join(data.get("content_desc", [])) if data.get("content_desc") else title_desc,
+                    "uploader": data.get("author", {}).get("unique_id", "Autor Desconocido"),
+                    "tags": tags,
+                    "tikwm_audio_url": data.get("music"),
+                }
+    except Exception as e:
+        print(f"Fallback TikWM failed: {e}", file=sys.stderr)
+        
     return {}
 
-def get_audio_and_transcribe(url, tmp_dir, model):
+def get_audio_and_transcribe(url, tmp_dir, model, tikwm_audio_url=None):
+    if tikwm_audio_url:
+        try:
+            r = requests.get(tikwm_audio_url, timeout=20)
+            if r.status_code == 200:
+                audio_path = os.path.join(tmp_dir, "temp_audio.mp3")
+                with open(audio_path, "wb") as f:
+                    f.write(r.content)
+                if os.path.exists(audio_path):
+                    result = model.transcribe(audio_path, fp16=False)
+                    return result.get("text", "").strip()
+        except Exception as e:
+            print(f"TikWM audio download failed: {e}", file=sys.stderr)
+
     use_cookies = os.path.exists("cookies.txt")
     cmd_base = [
         sys.executable, "-m", "yt_dlp",
-        "--user-agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "--extractor-args", "tiktok:api_hostname=api22-normal-c-useast2a.tiktokv.com",
         "-x", "--audio-format", "mp3",
         "--audio-quality", "0",
         "-o", os.path.join(tmp_dir, "temp_audio.%(ext)s"),
@@ -188,7 +226,8 @@ if procesar_btn and url_input:
             autor = meta.get("uploader", "Autor Desconocido")
             tags_originales = ", ".join(meta.get("tags", [])) if meta.get("tags") else "Ninguno"
             
-            transcripcion = get_audio_and_transcribe(url_input, tmp, whisper_model)
+            tikwm_audio_url = meta.get("tikwm_audio_url")
+            transcripcion = get_audio_and_transcribe(url_input, tmp, whisper_model, tikwm_audio_url)
             
             clasificacion = clasificar_con_ia(titulo, descripcion, transcripcion)
             

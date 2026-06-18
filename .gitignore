@@ -170,3 +170,5 @@ cookies.txt
 cookies.txt:Zone.Identifier
 .python-version
 main.py
+bin/
+

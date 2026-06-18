@@ -5,8 +5,12 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "curl-cffi>=0.15.0",
     "openai-whisper>=20250625",
     "requests>=2.34.2",
     "streamlit>=1.58.0",
     "yt-dlp>=2026.6.9",
 ]
+
+[tool.uv.sources]
+yt-dlp = { git = "https://github.com/yt-dlp/yt-dlp.git" }
