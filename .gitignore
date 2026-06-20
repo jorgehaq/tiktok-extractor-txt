@@ -172,3 +172,9 @@ cookies.txt:Zone.Identifier
 main.py
 bin/
 
+# Temporary and test generated files
+test_*
+*.mp3
+*.mp4
+*.m4a
+

@@ -115,6 +115,7 @@ def get_audio_and_transcribe(url, tmp_dir, model, tikwm_audio_url=None):
     cmd_base = [
         sys.executable, "-m", "yt_dlp",
         "--extractor-args", "tiktok:api_hostname=api22-normal-c-useast2a.tiktokv.com",
+        "-f", "b[vcodec^=h264]/b[vcodec^=avc1]/b",
         "-x", "--audio-format", "mp3",
         "--audio-quality", "0",
         "-o", os.path.join(tmp_dir, "temp_audio.%(ext)s"),
