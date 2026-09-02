@@ -1,3 +1,13 @@
+# DEPRECATED — Este módulo (Streamlit UI) queda deprecado a favor de la
+# arquitectura modular headless implementada en:
+#   extractor.py, transcriber.py, classifier.py, db.py y cli.py
+#
+# `cli.py` es el nuevo entrypoint canónico para uso vía CLI y como target
+# del wrapper ``run-tiktok-extract.mjs`` del Tool Centralizer.
+#
+# Este archivo se mantiene únicamente por compatibilidad legacy. No se
+# esperan nuevas funcionalidades ni mantenimiento activo aquí.
+
 import streamlit as st
 import sqlite3
 import json

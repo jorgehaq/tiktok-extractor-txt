@@ -1,0 +1,9 @@
+[allowlist]
+description = "Falso positivo: api_hostname de yt-dlp para extractor TikTok (no es un secreto)"
+regexes = [
+    "api22-normal-c-useast2a\\.tiktokv\\.com",
+]
+paths = [
+    "extractor.py",
+    "transcriber.py",
+]
